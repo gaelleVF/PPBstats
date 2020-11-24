@@ -11,6 +11,8 @@
 #'     \item Mixture_S
 #' }
 #' 
+#'
+#' @param type type
 #' 
 #' @return results from the model including weighted mean of components for each mixture
 #' 
@@ -44,14 +46,14 @@ analyse_mixtures = function(res_model,
   # Select analysis to make
   if(type == "comparison"){get_distrib <- TRUE}else{get_distrib <- FALSE}
   
-  ## fonction à intégrer dans package ==> retirer tout ce qui est fait avec get_modalities == TRUE
+  ## fonction à integrer dans package ==> retirer tout ce qui est fait avec get_modalities == TRUE
   if(type == "modalities"){get_modalities <- TRUE}else{get_modalities <- FALSE}
   
   # 3. Analysis
   
   #if(get_distrib){
     
-    # 1. Récupérer les données pour chaque mélange
+    # 1. Recuperer les donnees pour chaque melange
     if(get_distrib){d_env <- plyr:::splitter_d(data_mixture$data_all, .(germplasm))}
     if(get_modalities){d_env <- plyr:::splitter_d(data_mixture$data_all, .(expe_melange))} 
     
@@ -66,7 +68,7 @@ analyse_mixtures = function(res_model,
         if(get_distrib){d_yr <- list(d_env_yr[[2]])}   # First year is mixture event year : for get_distrib
         if(get_modalities){d_yr <- d_env_yr}
         
-        ## Attention : ne pas oublier de faire aussi pour les environnements où ça n'a pas convergé !!
+        ## Attention : ne pas oublier de faire aussi pour les environnements où ça n'a pas converge !!
         res_yr <- lapply(d_yr, function(x){
           x$entry <- unlist(lapply(as.character(x$seed_lot), function(x) strsplit(x,"_")[[1]][1]))
           x$ID <- paste(param,"[", x$entry, ",", x$location, ":", x$year, "]", sep="")
@@ -93,7 +95,7 @@ analyse_mixtures = function(res_model,
               res_comp <- res_loc[grep(paste(comp$sl_father_mod1,collapse="|"), names(res_loc))]
             }
             
-            # Pb si on a plusieurs sélections différentes --> à retirer pour le package !!
+            # Pb si on a plusieurs selections differentes --> à retirer pour le package !!
             for (x in comp$father_germplasm){
               b <- grep(x, names(res_comp))
               if(length(b) > 1){
@@ -140,7 +142,7 @@ analyse_mixtures = function(res_model,
           } #end if get_distrib
           
           if(get_modalities){
-            # Retirer les sélections de l'année en cours
+            # Retirer les selections de l'annee en cours
             a <- data_mixture$data_selection[data_mixture$data_selection$son %in% x$seed_lot,]
             if(nrow(a) > 0){
               b <- as.character(a[grep("bouquet",a$sl_statut),"son"])
@@ -159,20 +161,20 @@ analyse_mixtures = function(res_model,
             comp_mu$mean.comparisons$modalite = unlist(lapply(as.character(comp_mu$mean.comparisons$entry),function(y){
               if(length(grep("[.]2",y)) == 1){
                 if(length(grep("#JB",y)) == 1){
-                  return("Mélange issu 1 année sélection \n  dans composantes puis 1 année sélection\n  dans mélange (Mod2)")
+                  return("Melange issu 1 annee selection \n  dans composantes puis 1 annee selection\n  dans melange (Mod2)")
                 }else{
-                  return("Mélange issu 1 année sélection \n dans composantes (Mod2)")
+                  return("Melange issu 1 annee selection \n dans composantes (Mod2)")
                 }
               }
               if(length(grep("#B",y)) == 1){
                 if(length(grep("#BB",y)) == 1){
-                  return("Mélange sélectionné 2 années (Mod3)")
+                  return("Melange selectionne 2 annees (Mod3)")
                 }else{
-                  return("Mélange sélectionné 1 année (Mod3)")
+                  return("Melange selectionne 1 annee (Mod3)")
                 }
               }
-              if(length(grep("[.]3",y)) == 1){return("Mélange issu 2 années sélection \n dans composantes (Mod1)")}
-              if(length(grep("[.]2",y)) == 0 & length(grep("#B",y)) == 0 &  length(grep("[.]3",y)) == 0){return("Mélange non sélectionné (Mod4)")}
+              if(length(grep("[.]3",y)) == 1){return("Melange issu 2 annees selection \n dans composantes (Mod1)")}
+              if(length(grep("[.]2",y)) == 0 & length(grep("#B",y)) == 0 &  length(grep("[.]3",y)) == 0){return("Melange non selectionne (Mod4)")}
             }))
             return(comp_mu)
             
