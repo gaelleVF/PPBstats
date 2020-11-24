@@ -53,138 +53,141 @@ analyse_mixtures = function(res_model,
   
   #if(get_distrib){
     
-    # 1. Recuperer les donnees pour chaque melange
-    if(get_distrib){d_env <- plyr:::splitter_d(data_mixture$data_all, .(germplasm))}
-    if(get_modalities){d_env <- plyr:::splitter_d(data_mixture$data_all, .(expe_melange))} 
-    
+  # 1. Recuperer les donnees pour chaque melange
+  if(get_distrib){d_env <- plyr:::splitter_d(data_mixture$data_all, .(germplasm))}
+  if(get_modalities){d_env <- plyr:::splitter_d(data_mixture$data_all, .(expe_melange))} 
+  
    distrib <- mclapply(d_env, function(d_mix){
-      if(length(which(!is.na(d_mix$expe_melange))) == 0){return(NULL)}
-        
-        #For each mixture, keep only 1st year of cultivation
-        d_env_yr <- plyr:::splitter_d(d_mix, .(year))
-        
-        if(length(d_env_yr) < 2){return(NULL)}
-        
-        if(get_distrib){d_yr <- list(d_env_yr[[2]])}   # First year is mixture event year : for get_distrib
-        if(get_modalities){d_yr <- d_env_yr}
-        
-        ## Attention : ne pas oublier de faire aussi pour les environnements où ça n'a pas converge !!
-        res_yr <- lapply(d_yr, function(x){
-          x$entry <- unlist(lapply(as.character(x$seed_lot), function(x) strsplit(x,"_")[[1]][1]))
-          x$ID <- paste(param,"[", x$entry, ",", x$location, ":", x$year, "]", sep="")
-          res_loc <-res_model$MCMC[, grep(unique(paste(x$location, x$year,sep=":")),names(res_model$MCMC))]
-          
-          # Select results for the mixture and its components
-          res_mix <- res_loc[,colnames(res_loc) %in% x$ID]
-          if(class(res_mix) == "numeric"){
-            res_mix <- as.data.frame(res_mix)
-            colnames(res_mix) <- unique(colnames(res_loc)[which(colnames(res_loc) %in% x$ID)])
-          }
-          if(ncol(res_mix) == 0){return(NULL)}
-            
-          if(get_distrib){
-            comp <- data_mixture$data_mix[data_mixture$data_mix$germplasm %in% x$germplasm,]
-            comp <- unique(comp[which(!is.na(comp$father_germplasm)),])
-            res_comp <- res_loc[unlist(rm_between(colnames(res_loc), "[", ",", extract=TRUE)) %in% comp$entry]
-            
-            # A retirer pour le package
-            if(ncol(res_comp) < length(unique(comp$entry))){
-              res_comp <- res_loc[grep(paste(comp$sl_father_mod2,collapse="|"), names(res_loc))]
-            }
-            if(ncol(res_comp) < length(unique(comp$entry))){
-              res_comp <- res_loc[grep(paste(comp$sl_father_mod1,collapse="|"), names(res_loc))]
-            }
-            
-            # Pb si on a plusieurs selections differentes --> à retirer pour le package !!
-            for (pop in comp$father_germplasm){
-              b <- grep(pop, names(res_comp))
-              if(length(b) > 1){
-                to_add <- apply(res_comp[,b], 1, mean)
-                res_comp <- cbind(res_comp, to_add)
-                nom <- names(res_comp)[b[1]]
-                res_comp <- res_comp[,-b]
-                names(res_comp)[ncol(res_comp)] = nom
-              }
-            }
-            
-            if(ncol(res_comp) == length(unique(comp$entry))){missingcomp = FALSE}else{missingcomp = TRUE}
-            
-            if(!missingcomp){
-              
-              if(ncol(res_comp) == 0){return(NULL)}
-              
-              if("proportion" %in% colnames(comp)){
-                prop <- na.omit(comp[,c("father_germplasm", "proportion")])
-                noms <- names(res_comp)
-                noms <- unlist(lapply(noms, function(x) strsplit(strsplit(strsplit(x,"[[]")[[1]][2],",")[[1]][1],"#")[[1]][1]))
-                vec <- prop[match(prop$father_germplasm, noms),"proportion"]
-                
-                MeanComp = apply(res_comp, 1, function(x){return(sum(vec*x))})
-              }else{
-                MeanComp = apply(res_comp, 1, mean)
-              }
-              M <- cbind(res_mix,MeanComp,res_comp)
-              colnames(M)[colnames(M) %in% "MeanComp"] = paste(param,"[", "MeanComp",",",unique(na.omit(x$location)),":",unique(na.omit(x$year)),"]",sep="")
-              
-            }else{
-              M = cbind(res_mix, res_comp)
-            }
-            
-            if(ncol(M) < 2){return(NULL)}
-            
-            # Get results from model
-            res_check = list("MCMC" = M, "MCMC_conv_not_ok" = NULL, "data_env_with_no_controls" = NULL, "data_env_whose_param_did_not_converge" = NULL, "data_ggplot" = NULL)
-            class(res_check) <- c("PPBstats", "check_model_bh_intra_location")
-            comp_mu <- mean_comparisons(res_check, parameter = param)
-            
-            return(comp_mu$data_mean_comparisons[[1]])
-            
-          } #end if get_distrib
-          
-          if(get_modalities){
-            # Retirer les selections de l'annee en cours
-            a <- data_mixture$data_selection[data_mixture$data_selection$son %in% x$seed_lot,]
-            if(!is.null(a)){
-              b <- as.character(a[grep("bouquet",a$sl_statut),"son"])
-              if(length(b) > 0){
-                d <- x[as.character(x$seed_lot) %in% b,"ID"]
-                x <- x[!(as.character(x$seed_lot) %in% b),]
-                res_mix <- res_mix[!(names(res_mix) %in% d)]
-              }
-            }
-            if(ncol(res_mix) < 2){return(NULL)}
-            
-            res_check = list("MCMC" = res_mix, "MCMC_conv_not_ok" = NULL, "data_env_with_no_controls" = NULL, "data_env_whose_param_did_not_converge" = NULL, "data_ggplot" = NULL)
-            class(res_check) <- c("PPBstats", "check_model_bh_intra_location")
-            comp_mu <- mean_comparisons(res_check, parameter = param)$data_mean_comparisons[[1]]
-            
-            comp_mu$mean.comparisons$modalite = unlist(lapply(as.character(comp_mu$mean.comparisons$entry),function(y){
-              if(length(grep("[.]2",y)) == 1){
-                if(length(grep("#JB",y)) == 1){
-                  return("Melange issu 1 annee selection \n  dans composantes puis 1 annee selection\n  dans melange (Mod2)")
-                }else{
-                  return("Melange issu 1 annee selection \n dans composantes (Mod2)")
-                }
-              }
-              if(length(grep("#B",y)) == 1){
-                if(length(grep("#BB",y)) == 1){
-                  return("Melange selectionne 2 annees (Mod3)")
-                }else{
-                  return("Melange selectionne 1 annee (Mod3)")
-                }
-              }
-              if(length(grep("[.]3",y)) == 1){return("Melange issu 2 annees selection \n dans composantes (Mod1)")}
-              if(length(grep("[.]2",y)) == 0 & length(grep("#B",y)) == 0 &  length(grep("[.]3",y)) == 0){return("Melange non selectionne (Mod4)")}
-            }))
-            return(comp_mu)
-            
-            
-          } # end if get_modalities
-          
-        }) # end lapply(d_yr)
+     if(length(which(!is.na(d_mix$expe_melange))) == 0){return(NULL)}
+     
+     #For each mixture, keep only 1st year of cultivation
+     d_env_yr <- plyr:::splitter_d(d_mix, .(year))
+     
+     if(length(d_env_yr) < 2){return(NULL)}
+     
+     if(get_distrib){d_yr <- list(d_env_yr[[2]])}   # First year is mixture event year : for get_distrib
+     if(get_modalities){d_yr <- d_env_yr}
+     
+     ## Attention : ne pas oublier de faire aussi pour les environnements où ça n'a pas converge !!
+     res_yr <- lapply(d_yr, function(x){
+       x$entry <- unlist(lapply(as.character(x$seed_lot), function(x) strsplit(x,"_")[[1]][1]))
+       x$ID <- paste(param,"[", x$entry, ",", x$location, ":", x$year, "]", sep="")
+       res_loc <-res_model$MCMC[, grep(unique(paste(x$location, x$year,sep=":")),names(res_model$MCMC))]
+       
+       # Select results for the mixture and its components
+       res_mix <- res_loc[,colnames(res_loc) %in% x$ID]
+       if(class(res_mix) == "numeric"){
+         res_mix <- as.data.frame(res_mix)
+         colnames(res_mix) <- unique(colnames(res_loc)[which(colnames(res_loc) %in% x$ID)])
+       }
+       if(ncol(res_mix) == 0){return(NULL)}
+       
+       if(get_distrib){
+         comp <- data_mixture$data_mix[data_mixture$data_mix$germplasm %in% x$germplasm,]
+         comp <- unique(comp[which(!is.na(comp$father_germplasm)),])
+         res_comp <- res_loc[unlist(rm_between(colnames(res_loc), "[", ",", extract=TRUE)) %in% comp$entry]
+         
+         # A retirer pour le package
+         if(ncol(res_comp) < length(unique(comp$entry))){
+           res_comp <- res_loc[grep(paste(comp$sl_father_mod2,collapse="|"), names(res_loc))]
+         }
+         if(ncol(res_comp) < length(unique(comp$entry))){
+           res_comp <- res_loc[grep(paste(comp$sl_father_mod1,collapse="|"), names(res_loc))]
+         }
+         
+         # Pb si on a plusieurs selections differentes --> à retirer pour le package !!
+         for (pop in comp$father_germplasm){
+           b <- grep(pop, names(res_comp))
+           if(length(b) > 1){
+             to_add <- apply(res_comp[,b], 1, mean)
+             res_comp <- cbind(res_comp, to_add)
+             nom <- names(res_comp)[b[1]]
+             res_comp <- res_comp[,-b]
+             names(res_comp)[ncol(res_comp)] = nom
+           }
+         }
+         
+         if(ncol(res_comp) == length(unique(comp$entry))){missingcomp = FALSE}else{missingcomp = TRUE}
+         
+         if(!missingcomp){
+           
+           if(ncol(res_comp) == 0){return(NULL)}
+           
+           if("proportion" %in% colnames(comp)){
+             prop <- na.omit(comp[,c("father_germplasm", "proportion")])
+             noms <- names(res_comp)
+             noms <- unlist(lapply(noms, function(x) strsplit(strsplit(strsplit(x,"[[]")[[1]][2],",")[[1]][1],"#")[[1]][1]))
+             vec <- prop[match(prop$father_germplasm, noms),"proportion"]
+             
+             MeanComp = apply(res_comp, 1, function(x){return(sum(vec*x))})
+           }else{
+             MeanComp = apply(res_comp, 1, mean)
+           }
+           M <- cbind(res_mix,MeanComp,res_comp)
+           colnames(M)[colnames(M) %in% "MeanComp"] = paste(param,"[", "MeanComp",",",unique(na.omit(x$location)),":",unique(na.omit(x$year)),"]",sep="")
+           
+         }else{
+           M = cbind(res_mix, res_comp)
+         }
+         
+         if(ncol(M) < 2){return(NULL)}
+         
+         # Get results from model
+         res_check = list("MCMC" = M, "MCMC_conv_not_ok" = NULL, "data_env_with_no_controls" = NULL, "data_env_whose_param_did_not_converge" = NULL, "data_ggplot" = NULL)
+         class(res_check) <- c("PPBstats", "check_model_bh_intra_location")
+         comp_mu <- mean_comparisons(res_check, parameter = param)$data_mean_comparisons[[1]]
+         comp_mu$mean.comparisons <- merge(comp_mu$mean.comparisons, comp[,c("entry","group")], by="entry", all=T)
+         comp_mu$mean.comparisons[comp_mu$mean.comparisons$entry == "MeanComp","group"] = "MC"
+         comp_mu$mean.comparisons[is.na(comp_mu$mean.comparisons$group),"group"] = "M"
+         return(comp_mu)
+         
+       } #end if get_distrib
+       
+       if(get_modalities){
+         # Retirer les selections de l'annee en cours
+         a <- data_mixture$data_selection[data_mixture$data_selection$son %in% x$seed_lot,]
+         if(!is.null(a)){
+           b <- as.character(a[grep("bouquet",a$sl_statut),"son"])
+           if(length(b) > 0){
+             d <- x[as.character(x$seed_lot) %in% b,"ID"]
+             x <- x[!(as.character(x$seed_lot) %in% b),]
+             res_mix <- res_mix[!(names(res_mix) %in% d)]
+           }
+         }
+         if(ncol(res_mix) < 2){return(NULL)}
+         
+         res_check = list("MCMC" = res_mix, "MCMC_conv_not_ok" = NULL, "data_env_with_no_controls" = NULL, "data_env_whose_param_did_not_converge" = NULL, "data_ggplot" = NULL)
+         class(res_check) <- c("PPBstats", "check_model_bh_intra_location")
+         comp_mu <- mean_comparisons(res_check, parameter = param)$data_mean_comparisons[[1]]
+         
+         comp_mu$mean.comparisons$modalite = unlist(lapply(as.character(comp_mu$mean.comparisons$entry),function(y){
+           if(length(grep("[.]2",y)) == 1){
+             if(length(grep("#JB",y)) == 1){
+               return("Melange issu 1 annee selection \n  dans composantes puis 1 annee selection\n  dans melange (Mod2)")
+             }else{
+               return("Melange issu 1 annee selection \n dans composantes (Mod2)")
+             }
+           }
+           if(length(grep("#B",y)) == 1){
+             if(length(grep("#BB",y)) == 1){
+               return("Melange selectionne 2 annees (Mod3)")
+             }else{
+               return("Melange selectionne 1 annee (Mod3)")
+             }
+           }
+           if(length(grep("[.]3",y)) == 1){return("Melange issu 2 annees selection \n dans composantes (Mod1)")}
+           if(length(grep("[.]2",y)) == 0 & length(grep("#B",y)) == 0 &  length(grep("[.]3",y)) == 0){return("Melange non selectionne (Mod4)")}
+         }))
+         return(comp_mu)
+         
+         
+       } # end if get_modalities
+       
+     }) # end lapply(d_yr)
 }, mc.cores = 3) # end lapply
 
     distrib <- distrib[!sapply(distrib, is.null)]
+    class(distrib) <- c("PPBstats", "analyse_mixture")
     return(distrib)
 
   
