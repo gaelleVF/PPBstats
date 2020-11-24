@@ -57,7 +57,7 @@ analyse_mixtures = function(res_model,
     if(get_distrib){d_env <- plyr:::splitter_d(data_mixture$data_all, .(germplasm))}
     if(get_modalities){d_env <- plyr:::splitter_d(data_mixture$data_all, .(expe_melange))} 
     
-    distrib <- mclapply(d_env, function(d_mix){
+   distrib <- mclapply(d_env, function(d_mix){
       if(length(which(!is.na(d_mix$expe_melange))) == 0){return(NULL)}
         
         #For each mixture, keep only 1st year of cultivation
@@ -96,8 +96,8 @@ analyse_mixtures = function(res_model,
             }
             
             # Pb si on a plusieurs selections differentes --> à retirer pour le package !!
-            for (x in comp$father_germplasm){
-              b <- grep(x, names(res_comp))
+            for (pop in comp$father_germplasm){
+              b <- grep(pop, names(res_comp))
               if(length(b) > 1){
                 to_add <- apply(res_comp[,b], 1, mean)
                 res_comp <- cbind(res_comp, to_add)
@@ -144,7 +144,7 @@ analyse_mixtures = function(res_model,
           if(get_modalities){
             # Retirer les selections de l'annee en cours
             a <- data_mixture$data_selection[data_mixture$data_selection$son %in% x$seed_lot,]
-            if(nrow(a) > 0){
+            if(!is.null(a)){
               b <- as.character(a[grep("bouquet",a$sl_statut),"son"])
               if(length(b) > 0){
                 d <- x[as.character(x$seed_lot) %in% b,"ID"]
@@ -182,8 +182,7 @@ analyse_mixtures = function(res_model,
           } # end if get_modalities
           
         }) # end lapply(d_yr)
-
-  }, mc.cores = 3) # end lapply
+}, mc.cores = 3) # end lapply
 
     distrib <- distrib[!sapply(distrib, is.null)]
     return(distrib)
