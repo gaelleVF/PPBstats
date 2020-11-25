@@ -1780,3 +1780,24 @@ check_list_out_check_model = function(valid_models, list_out_check_model){
   }
   return(all_by_model)
 }
+
+
+# get significance stars for pvalue ----------
+#'
+#' @description
+#' \code{get_stars} get significance symbols for pvalue
+#'
+#' @param data A vector with pvalues (from 0 to 1)
+#' 
+#' @return A vector containing significance symbols
+#' 
+#' @author Gaelle van Frank
+#'
+#' @export
+#'
+get_stars = function(data) {
+  stars = findInterval(res, c(0, 0.001, 0.01, 0.05, 0.1))
+  stars[is.na(stars)]=5
+  codes = c("***" , "**","*", ".", " ")
+  return(codes[stars])
+}
