@@ -1796,7 +1796,7 @@ check_list_out_check_model = function(valid_models, list_out_check_model){
 #' @export
 #'
 get_stars = function(data) {
-  stars = findInterval(res, c(0, 0.001, 0.01, 0.05, 0.1))
+  stars = findInterval(data, c(0, 0.001, 0.01, 0.05, 0.1))
   stars[is.na(stars)]=5
   codes = c("***" , "**","*", ".", " ")
   return(codes[stars])
