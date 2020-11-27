@@ -1782,7 +1782,8 @@ check_list_out_check_model = function(valid_models, list_out_check_model){
 }
 
 
-# get significance stars for pvalue ----------
+# Get significance symbols for pvalue ----------
+#'Get significance symbols for pvalue
 #'
 #' @description
 #' \code{get_stars} get significance symbols for pvalue
