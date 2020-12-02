@@ -40,7 +40,7 @@ comp.parameters = function(
   )
 {
 # 1. Error message and update arguments ----------
-match.arg(parameter, "mu", several.ok = FALSE)
+match.arg(parameter, c("mu","sigma"), several.ok = FALSE)
   
 if( !is.data.frame(MCMC) ) { stop("MCMC must be a data frame.") }
 
