@@ -55,7 +55,10 @@ check_model.fit_model_bh_variance_intra = function(
     for (i in mcmc_to_delete){MCMC = MCMC[,names(MCMC)!=i]}
 
     data_whose_param_did_not_converge=mcmc_to_delete
-   } else {   data_whose_param_did_not_converge = NULL }
+  } else {  
+     data_whose_param_did_not_converge = NULL 
+     mcmc_to_delete = NULL
+  }
   
   
   attributes(data_whose_param_did_not_converge)$PPBstats.object = "data_whose_param_did_not_converge"
