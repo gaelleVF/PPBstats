@@ -92,7 +92,10 @@ check_model.fit_model_bh_intra_location <- function(
       
       mcmc_to_delete = c(m1, m2, m3)
       MCMC = MCMC[,-mcmc_to_delete] 
-    } else {   data_env_whose_param_did_not_converge = NULL }
+    } else {
+      mcmc_to_delete = NULL
+      data_env_whose_param_did_not_converge = NULL 
+    }
   } else {   
     mcmc_to_delete = NULL
     data_env_whose_param_did_not_converge = NULL 

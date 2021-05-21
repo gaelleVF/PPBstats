@@ -29,7 +29,7 @@
 PPBsummary.analyse_mixture = function(data, type = "distribution"){
 
   #1. Check arguments
-  if("analyse_mixture" %in% class(data)){
+  if("analyse_mixture" %in% class(data) & type == "correlation"){
     correl_between_traits = FALSE
   }else{
     correl_between_traits = TRUE
@@ -106,9 +106,11 @@ PPBsummary.analyse_mixture = function(data, type = "distribution"){
   
   
   if(type == "selection_modalities"){
-    Tab <- lapply(c("all",unique(data$global$mod_year)), function(yr){
+    Tab <- lapply(c("all","all_but_1",unique(data$global$mod_year)), function(yr){
       if(yr == "all"){
         D <- data$global
+      }else if(yr == "all_but_1"){
+        D <- data$global[data$global$mod_year != 1,]
       }else{
         D <- data$global[data$global$mod_year == yr,]
       }
@@ -124,22 +126,28 @@ PPBsummary.analyse_mixture = function(data, type = "distribution"){
                         "gain_M1" = mean(na.omit(D$gain_M1)),
                         "pval_M1" = m1,
                         "stars_M1" = get_stars(m1),
+                        "n_M1" = length(na.omit(D$gain_M1)),
                         "gain_M2" = mean(na.omit(D$gain_M2)),
                         "pval_M2" = m2,
                         "stars_M2" = get_stars(m2),
+                        "n_M2" = length(na.omit(D$gain_M2)),
                         "gain_M3" = mean(na.omit(D$gain_M3)),
                         "pval_M3" = m3,
                         "stars_M3" = get_stars(m3),
+                        "n_M3" = length(na.omit(D$gain_M3)),
              
                          "gain_M12" = mean(na.omit(D$gain_M12)),
                          "pval_M12" = m12,
                          "stars_M12" = get_stars(m12),
+                         "n_M12" = length(na.omit(D$gain_M12)),
                          "gain_M23" = mean(na.omit(D$gain_M23)),
                          "pval_M23" = m23,
                          "stars_M23" = get_stars(m23),
+                         "n_M23" = length(na.omit(D$gain_M23)),
                          "gain_M13" = mean(na.omit(D$gain_M13)),
                          "pval_M13" = m13,
-                         "stars_M13" = get_stars(m13))
+                         "stars_M13" = get_stars(m13),
+                          "n_M13" = length(na.omit(D$gain_M13)))
                         )
     })
    Tab <- do.call(rbind, Tab)

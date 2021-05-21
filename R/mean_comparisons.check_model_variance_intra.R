@@ -72,10 +72,10 @@ mean_comparisons.check_model_bh_variance_intra = function(
 ){
   
   # 1. Error message
+  match.arg(parameter, c("mu", "sigma"), several.ok = FALSE)
+  match.arg(p.adj, "soft.bonf", several.ok = FALSE)
 
-  if(!is.element(parameter, c("mu", "sigma"))) { stop("With outputs from bayesian hierarchical variance intra model, the parameters must be mu or sigma") }
-  
-  MCMC =x$MCMC
+  MCMC <- x$MCMC
   
   # 2. Get square matrice with pvalue or vector with pvalue ----------
   MCMC_par = function(MCMC, parameter, type, threshold, alpha, p.adj, precision, get.at.least.X.groups){

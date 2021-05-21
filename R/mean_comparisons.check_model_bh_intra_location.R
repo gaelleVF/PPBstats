@@ -109,7 +109,7 @@ mean_comparisons.check_model_bh_intra_location <- function(
   # 3. Format data_env_with_no_controls and data_env_whose_param_did_not_converge
   fun_format_data = function(x){
     vec_env = unique(x$environment)
-    out = lapply(vec_env, function(env, x){ list("mean.comparisons" = filter(x, environment == env)) }, x)
+    out = lapply(vec_env, function(env, x){ list("mean.comparisons" = dplyr::filter(x, environment == env)) }, x)
     names(out) = vec_env
     return(out)
   }
